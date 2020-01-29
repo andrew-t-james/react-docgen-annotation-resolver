@@ -14,7 +14,7 @@ describe("annotationResolver", () => {
   }
 
   describe("annotated export", () => {
-    test("finds annoted export Stateful", () => {
+    test("finds annotated export Stateful", () => {
       const source = `
         import React from "react";
 
@@ -32,7 +32,7 @@ describe("annotationResolver", () => {
       expect(result[0] instanceof NodePath).toBe(true);
       expect(result[0].node.callee.object.name).toBe("React");
     });
-    test("finds annoted export Stateless", () => {
+    test("finds annotated export Stateless", () => {
       const source = `
         import React from "react";
 
@@ -61,7 +61,7 @@ describe("annotationResolver", () => {
         /**
          * @component
          */
-        export default connect(mapStateToProps, Component);
+        export default connect(mapStateToProps)(Component);
       `;
 
       const result = parseSource(source);
@@ -79,7 +79,7 @@ describe("annotationResolver", () => {
         /**
          * @component
          */
-        export default connect(mapStateToProps, Component);
+        export default connect(mapStateToProps)(Component);
       `;
 
       const result = parseSource(source);
@@ -89,6 +89,42 @@ describe("annotationResolver", () => {
       expect(namedTypes.ArrowFunctionExpression.check(result[0].node)).toBe(
         true,
       );
+    });
+    test("finds annotated export styled component", () => {
+      const source = `
+        import styled from "styled-components";
+
+        const Component = styled(div)\`\`;
+
+        /**
+         * @component
+         */
+        export default Component;
+      `;
+
+      const result = parseSource(source);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(1);
+      expect(result[0] instanceof NodePath).toBe(true);
+      expect(result[0].node.tag.callee.name).toBe("styled");
+    });
+    test("finds annotated export styled component wrapped in HOC", () => {
+      const source = `
+        import styled from "styled-components";
+
+        const Component = styled.div\`\`;
+
+        /**
+         * @component
+         */
+        export default wrapped(Component);
+      `;
+
+      const result = parseSource(source);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(1);
+      expect(result[0] instanceof NodePath).toBe(true);
+      expect(result[0].node.tag.object.name).toBe("styled");
     });
     test("Does not find if not annotated Stateless", () => {
       const source = `
